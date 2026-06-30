@@ -3,6 +3,7 @@ import { useEngineHistory } from "./engine/useEngineHistory";
 import PianoRollCanvas from "./components/PianoRollCanvas";
 import { useCommandDispatch } from "./engine/useCommandDispatch";
 import type { SongState } from "@harmony-engine/core";
+import { PlaybackEngine } from "./audio/PlaybackEngine";
 
 /**
  * Temporary factory for initial song state.
@@ -25,6 +26,7 @@ export default function App() {
 
   const engine = useEngineHistory(initialState);
   const dispatch = useCommandDispatch(engine);
+  const player = useMemo(() => new PlaybackEngine(), []);
 
   /**
    * Click-to-insert note handler
@@ -68,9 +70,10 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <header style={{ padding: 10, borderBottom: "1px solid #333" }}>
+      <header style={{ padding: 10, borderBottom: "1px solid #333", display: "flex", gap: 10 }}>
         <button onClick={() => engine.undo()}>Undo</button>
         <button onClick={() => engine.redo()}>Redo</button>
+        <button onClick={() => player.play(engine.state)}>Play</button>
       </header>
 
       <main style={{ display: "flex", height: "calc(100vh - 40px)" }}>
