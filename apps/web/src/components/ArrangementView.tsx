@@ -19,6 +19,14 @@ function clipWidth(clip: Clip) {
   return beatsToX(clip.lengthBeats);
 }
 
+function cloneClip(clip: Clip): Clip {
+  return {
+    ...clip,
+    id: `clip-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: clip.name ? `${clip.name} copy` : "Clip copy",
+  };
+}
+
 export default function ArrangementView() {
   const [arr, setArr] = useState<Arrangement | null>(null);
 
@@ -26,7 +34,8 @@ export default function ArrangementView() {
     clipId: string | null;
     offsetX: number;
     mode: "move" | "resize";
-  }>({ clipId: null, offsetX: 0, mode: "move" });
+    duplicate: boolean;
+  }>({ clipId: null, offsetX: 0, mode: "move", duplicate: false });
 
   useEffect(() => {
     const tick = () => {
@@ -46,18 +55,49 @@ export default function ArrangementView() {
 
     const width = clipWidth(clip);
 
-    // resize if near right edge
     if (width - x < 10) return "resize";
     return "move";
   }
 
   function onMouseDown(e: React.MouseEvent, clip: Clip) {
+    const state = (window as any).__ENGINE_STATE__;
+    if (!state?.arrangement) return;
+
     const rect = (e.target as HTMLDivElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
 
-    dragRef.current.clipId = clip.id;
+    const mode = detectMode(e, clip);
+
     dragRef.current.offsetX = x;
-    dragRef.current.mode = detectMode(e, clip);
+    dragRef.current.mode = mode;
+    dragRef.current.duplicate = e.ctrlKey || e.metaKey || e.altKey;
+
+    let activeClip = clip;
+
+    // DUPLICATION
+    if (dragRef.current.duplicate) {
+      const newClip = cloneClip(clip);
+
+      state.arrangement.clips[newClip.id] = newClip;
+
+      const track = Object.values(state.arrangement.tracks).find(t =>
+        t.clipIds.includes(clip.id)
+      );
+
+      if (track) {
+        track.clipIds.push(newClip.id);
+      }
+
+      activeClip = newClip;
+
+      (window as any).__ENGINE_STATE__.arrangement = {
+        ...state.arrangement,
+      };
+
+      setArr({ ...state.arrangement });
+    }
+
+    dragRef.current.clipId = activeClip.id;
   }
 
   function onMouseMove(e: React.MouseEvent) {
@@ -93,6 +133,7 @@ export default function ArrangementView() {
 
   function onMouseUp() {
     dragRef.current.clipId = null;
+    dragRef.current.duplicate = false;
   }
 
   if (!arr) {
