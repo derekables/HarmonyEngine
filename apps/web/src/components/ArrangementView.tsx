@@ -3,6 +3,7 @@ import type { Arrangement } from "../models/Arrangement";
 import type { Clip } from "../models/Clip";
 
 const SNAP_GRID = 0.25;
+const MAGNETIC_THRESHOLD = 0.2; // beats
 
 function beatsToX(beats: number) {
   return beats * 40;
@@ -31,6 +32,36 @@ function cloneClip(clip: Clip): Clip {
     id: `clip-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     name: clip.name ? `${clip.name} copy` : "Clip copy",
   };
+}
+
+function getMagneticPoints(arr: Arrangement, excludeId?: string): number[] {
+  const pts: number[] = [];
+
+  Object.values(arr.clips).forEach((c) => {
+    if (c.id === excludeId) return;
+
+    const start = c.start.measure * 4 + c.start.beat;
+    const end = start + c.lengthBeats;
+
+    pts.push(start, end);
+  });
+
+  return pts;
+}
+
+function applyMagnetism(value: number, points: number[]): number {
+  let closest = value;
+  let minDist = MAGNETIC_THRESHOLD;
+
+  for (const p of points) {
+    const d = Math.abs(p - value);
+    if (d < minDist) {
+      minDist = d;
+      closest = p;
+    }
+  }
+
+  return closest;
 }
 
 export default function ArrangementView() {
@@ -116,18 +147,21 @@ export default function ArrangementView() {
 
     const containerX = e.clientX;
     const rawBeat = xToBeats(containerX - dragRef.current.offsetX);
-    const newBeat = snap(rawBeat);
+
+    const gridSnapped = snap(rawBeat);
+    const magneticPoints = getMagneticPoints(state.arrangement, clip.id);
+    const beat = applyMagnetism(gridSnapped, magneticPoints);
 
     if (dragRef.current.mode === "move") {
-      const snapped = snap(newBeat, 1);
+      const snapped = snap(beat, 1);
       const measure = Math.floor(snapped / 4);
-      const beat = snapped % 4;
-      clip.start = { measure, beat };
+      const b = snapped % 4;
+      clip.start = { measure, beat: b };
     }
 
     if (dragRef.current.mode === "resize") {
       const startBeat = clip.start.measure * 4 + clip.start.beat;
-      const newLength = snap(newBeat - startBeat);
+      const newLength = snap(beat - startBeat);
       clip.lengthBeats = Math.max(0.25, newLength);
     }
 
