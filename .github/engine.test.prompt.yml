@@ -1,0 +1,59 @@
+name: engine.test.prompt
+
+prompt: |
+  You are generating tests for the Harmony Engine core system.
+
+  Harmony Engine is a deterministic musical state machine implemented in TypeScript.
+
+  CORE RULES:
+  - No UI, no audio, no MIDI dependencies
+  - All state changes occur via commands only
+  - State is fully derived from command history
+  - Notes are GLOBAL TRUTH OBJECTS (not owned by tracks)
+  - Reducer must be pure and immutable
+
+  TESTING GOALS:
+  Generate a comprehensive test suite for the engine reducer system.
+
+  REQUIRED TEST COVERAGE:
+
+  1. Song Initialization
+     - Empty SongState is valid
+
+  2. Insert Note
+     - Adds note to state
+     - State remains immutable
+     - Note is retrievable from state.notes
+
+  3. Delete Note
+     - Removes note from state
+     - Removing non-existent note does not crash system
+
+  4. Modify Note
+     - Returns new state with updated note
+     - Does not mutate original state
+
+  5. Command History
+     - Commands are appended correctly
+     - History order is preserved
+
+  6. Undo
+     - Reverts last command
+     - State matches previous snapshot
+
+  7. Redo
+     - Re-applies undone command
+     - State matches expected forward state
+
+  8. Reducer Determinism
+     - Same input state + command produces identical output
+
+  9. Structural Invariants
+     - Tracks never own notes
+     - Notes remain global and consistent across all operations
+
+  OUTPUT REQUIREMENTS:
+  - Use TypeScript
+  - Prefer Jest or Vitest
+  - Keep tests pure and deterministic
+  - No mocks unless absolutely necessary
