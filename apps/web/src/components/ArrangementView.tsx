@@ -21,10 +21,12 @@ function clipWidth(clip: Clip) {
 
 export default function ArrangementView() {
   const [arr, setArr] = useState<Arrangement | null>(null);
-  const dragRef = useRef<{ clipId: string | null; offsetX: number }>({
-    clipId: null,
-    offsetX: 0,
-  });
+
+  const dragRef = useRef<{
+    clipId: string | null;
+    offsetX: number;
+    mode: "move" | "resize";
+  }>({ clipId: null, offsetX: 0, mode: "move" });
 
   useEffect(() => {
     const tick = () => {
@@ -38,12 +40,24 @@ export default function ArrangementView() {
     return () => clearInterval(id);
   }, []);
 
+  function detectMode(e: React.MouseEvent, clip: Clip) {
+    const rect = (e.target as HTMLDivElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    const width = clipWidth(clip);
+
+    // resize if near right edge
+    if (width - x < 10) return "resize";
+    return "move";
+  }
+
   function onMouseDown(e: React.MouseEvent, clip: Clip) {
     const rect = (e.target as HTMLDivElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
 
     dragRef.current.clipId = clip.id;
     dragRef.current.offsetX = x;
+    dragRef.current.mode = detectMode(e, clip);
   }
 
   function onMouseMove(e: React.MouseEvent) {
@@ -58,10 +72,17 @@ export default function ArrangementView() {
     const containerX = e.clientX;
     const newBeat = xToBeats(containerX - dragRef.current.offsetX);
 
-    const measure = Math.floor(newBeat / 4);
-    const beat = newBeat % 4;
+    if (dragRef.current.mode === "move") {
+      const measure = Math.floor(newBeat / 4);
+      const beat = newBeat % 4;
+      clip.start = { measure, beat };
+    }
 
-    clip.start = { measure, beat };
+    if (dragRef.current.mode === "resize") {
+      const startBeat = clip.start.measure * 4 + clip.start.beat;
+      const newLength = Math.max(0.25, newBeat - startBeat);
+      clip.lengthBeats = newLength;
+    }
 
     (window as any).__ENGINE_STATE__.arrangement = {
       ...state.arrangement,
@@ -98,6 +119,8 @@ export default function ArrangementView() {
               const clip = arr.clips[clipId];
               if (!clip) return null;
 
+              const isResizing = dragRef.current.clipId === clip.id && dragRef.current.mode === "resize";
+
               return (
                 <div
                   key={clip.id}
@@ -113,7 +136,7 @@ export default function ArrangementView() {
                     color: "white",
                     fontSize: 12,
                     padding: 4,
-                    cursor: "grab",
+                    cursor: isResizing ? "ew-resize" : "grab",
                     userSelect: "none",
                   }}
                 >
