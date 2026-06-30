@@ -3,7 +3,7 @@ import type { Arrangement } from "../models/Arrangement";
 import type { Clip } from "../models/Clip";
 
 const SNAP_GRID = 0.25;
-const MAGNETIC_THRESHOLD = 0.2; // beats
+const MAGNETIC_THRESHOLD = 0.2;
 
 function beatsToX(beats: number) {
   return beats * 40;
@@ -66,6 +66,13 @@ function applyMagnetism(value: number, points: number[]): number {
 
 export default function ArrangementView() {
   const [arr, setArr] = useState<Arrangement | null>(null);
+
+  // SNAP PREVIEW STATE
+  const [preview, setPreview] = useState<null | {
+    x: number;
+    width: number;
+    visible: boolean;
+  }>(null);
 
   const dragRef = useRef<{
     clipId: string | null;
@@ -134,6 +141,7 @@ export default function ArrangementView() {
     }
 
     dragRef.current.clipId = activeClip.id;
+    setPreview({ x: clipToX(activeClip), width: clipWidth(activeClip), visible: true });
   }
 
   function onMouseMove(e: React.MouseEvent) {
@@ -152,18 +160,30 @@ export default function ArrangementView() {
     const magneticPoints = getMagneticPoints(state.arrangement, clip.id);
     const beat = applyMagnetism(gridSnapped, magneticPoints);
 
+    let previewX = clipToX(clip);
+    let previewW = clipWidth(clip);
+
     if (dragRef.current.mode === "move") {
       const snapped = snap(beat, 1);
       const measure = Math.floor(snapped / 4);
       const b = snapped % 4;
+
       clip.start = { measure, beat: b };
+      previewX = beatsToX(snapped);
     }
 
     if (dragRef.current.mode === "resize") {
       const startBeat = clip.start.measure * 4 + clip.start.beat;
       const newLength = snap(beat - startBeat);
       clip.lengthBeats = Math.max(0.25, newLength);
+      previewW = beatsToX(clip.lengthBeats);
     }
+
+    setPreview({
+      x: previewX,
+      width: previewW,
+      visible: true,
+    });
 
     (window as any).__ENGINE_STATE__.arrangement = {
       ...state.arrangement,
@@ -175,6 +195,7 @@ export default function ArrangementView() {
   function onMouseUp() {
     dragRef.current.clipId = null;
     dragRef.current.duplicate = false;
+    setPreview(null);
   }
 
   if (!arr) {
@@ -188,6 +209,24 @@ export default function ArrangementView() {
       onMouseUp={onMouseUp}
     >
       <div style={{ position: "relative", minHeight: 400 }}>
+
+        {/* SNAP PREVIEW GHOST */}
+        {preview?.visible && (
+          <div
+            style={{
+              position: "absolute",
+              left: preview.x,
+              width: preview.width,
+              height: 40,
+              top: 10,
+              background: "rgba(120,180,255,0.25)",
+              border: "1px dashed rgba(120,180,255,0.8)",
+              borderRadius: 4,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
         {Object.values(arr.tracks).map((track) => (
           <div
             key={track.id}
