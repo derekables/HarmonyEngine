@@ -1,33 +1,98 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useEngineHistory } from "./engine/useEngineHistory";
+import PianoRollCanvas from "./components/PianoRollCanvas";
+import { useCommandDispatch } from "./engine/useCommandDispatch";
+import type { SongState } from "@harmony-engine/core";
 
 /**
- * Harmony Engine UI Root
- *
- * This is the first compositional shell for the web UI.
- * It will host:
- * - Piano Roll View
- * - Tab View
- * - Future transport / playback controls
+ * Temporary factory for initial song state.
+ * Will later be moved into engine core.
  */
+function createEmptySongState(): SongState {
+  return {
+    id: "song-1",
+    notes: {},
+    tracks: {},
+    timeline: {
+      tempoMap: [],
+      timeSignatureMap: [],
+    },
+  };
+}
 
 export default function App() {
+  const initialState = useMemo(() => createEmptySongState(), []);
+
+  const engine = useEngineHistory(initialState);
+  const dispatch = useCommandDispatch(engine);
+
+  /**
+   * Click-to-insert note handler
+   */
+  function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const measure = Math.floor(x / 200);
+    const beat = Math.floor((x % 200) / 40);
+
+    const octave = Math.floor(y / 50);
+    const steps = ["C", "D", "E", "F", "G", "A", "B"];
+    const step = steps[Math.max(0, Math.min(6, Math.floor(y / 30) % 7))];
+
+    const note = {
+      id: `note-${Date.now()}`,
+      pitch: {
+        step,
+        octave,
+      },
+      onset: {
+        measure,
+        beat,
+      },
+      duration: {
+        beats: 1,
+      },
+      velocity: 100,
+    };
+
+    dispatch({
+      id: `cmd-${Date.now()}`,
+      type: "insert_note",
+      timestamp: Date.now(),
+      note,
+    } as any);
+  }
+
   return (
-    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header style={{ padding: "10px", borderBottom: "1px solid #333" }}>
-        <h1>Harmony Engine</h1>
+    <div style={{ width: "100vw", height: "100vh" }}>
+      <header style={{ padding: 10, borderBottom: "1px solid #333" }}>
+        <button onClick={() => engine.undo()}>Undo</button>
+        <button onClick={() => engine.redo()}>Redo</button>
       </header>
 
-      <main style={{ flex: 1, display: "flex" }}>
-        {/* Piano Roll Area (placeholder for now) */}
-        <div style={{ flex: 2, borderRight: "1px solid #333" }}>
-          <h2 style={{ padding: 10 }}>Piano Roll</h2>
+      <main style={{ display: "flex", height: "calc(100vh - 40px)" }}>
+        <div style={{ flex: 3 }}>
+          <PianoRollCanvas state={engine.state} />
         </div>
 
-        {/* Tab View Area (placeholder for now) */}
-        <div style={{ flex: 1 }}>
-          <h2 style={{ padding: 10 }}>Tab View</h2>
+        <div style={{ flex: 1, padding: 10 }}>
+          <h3>Tab View (placeholder)</h3>
         </div>
       </main>
+
+      <div
+        onClick={handleCanvasClick}
+        style={{
+          position: "absolute",
+          top: 40,
+          left: 0,
+          width: "70%",
+          height: "calc(100vh - 40px)",
+        }}
+      />
     </div>
   );
 }
