@@ -4,6 +4,7 @@ import PianoRollCanvas from "./components/PianoRollCanvas";
 import { useCommandDispatch } from "./engine/useCommandDispatch";
 import type { SongState } from "@harmony-engine/core";
 import { PlaybackEngine } from "./audio/PlaybackEngine";
+import { Transport } from "./audio/Transport";
 
 /**
  * Temporary factory for initial song state.
@@ -26,7 +27,9 @@ export default function App() {
 
   const engine = useEngineHistory(initialState);
   const dispatch = useCommandDispatch(engine);
-  const player = useMemo(() => new PlaybackEngine(), []);
+
+  const transport = useMemo(() => new Transport(120), []);
+  const player = useMemo(() => new PlaybackEngine(transport), [transport]);
 
   /**
    * Click-to-insert note handler
@@ -73,7 +76,18 @@ export default function App() {
       <header style={{ padding: 10, borderBottom: "1px solid #333", display: "flex", gap: 10 }}>
         <button onClick={() => engine.undo()}>Undo</button>
         <button onClick={() => engine.redo()}>Redo</button>
-        <button onClick={() => player.play(engine.state)}>Play</button>
+
+        <button
+          onClick={() => {
+            transport.play();
+            player.play(engine.state);
+          }}
+        >
+          Play
+        </button>
+
+        <button onClick={() => transport.pause()}>Pause</button>
+        <button onClick={() => transport.stop()}>Stop</button>
       </header>
 
       <main style={{ display: "flex", height: "calc(100vh - 40px)" }}>
