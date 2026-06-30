@@ -2,12 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Arrangement } from "../models/Arrangement";
 import type { Clip } from "../models/Clip";
 
+const SNAP_GRID = 0.25;
+
 function beatsToX(beats: number) {
   return beats * 40;
 }
 
 function xToBeats(x: number) {
   return x / 40;
+}
+
+function snap(value: number, grid: number = SNAP_GRID) {
+  return Math.round(value / grid) * grid;
 }
 
 function clipToX(clip: Clip) {
@@ -53,7 +59,7 @@ export default function ArrangementView() {
     const rect = (e.target as HTMLDivElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
 
-    const width = clipWidth(clip);
+    const width = clipToX(clip);
 
     if (width - x < 10) return "resize";
     return "move";
@@ -74,7 +80,6 @@ export default function ArrangementView() {
 
     let activeClip = clip;
 
-    // DUPLICATION
     if (dragRef.current.duplicate) {
       const newClip = cloneClip(clip);
 
@@ -110,18 +115,20 @@ export default function ArrangementView() {
     if (!clip) return;
 
     const containerX = e.clientX;
-    const newBeat = xToBeats(containerX - dragRef.current.offsetX);
+    const rawBeat = xToBeats(containerX - dragRef.current.offsetX);
+    const newBeat = snap(rawBeat);
 
     if (dragRef.current.mode === "move") {
-      const measure = Math.floor(newBeat / 4);
-      const beat = newBeat % 4;
+      const snapped = snap(newBeat, 1);
+      const measure = Math.floor(snapped / 4);
+      const beat = snapped % 4;
       clip.start = { measure, beat };
     }
 
     if (dragRef.current.mode === "resize") {
       const startBeat = clip.start.measure * 4 + clip.start.beat;
-      const newLength = Math.max(0.25, newBeat - startBeat);
-      clip.lengthBeats = newLength;
+      const newLength = snap(newBeat - startBeat);
+      clip.lengthBeats = Math.max(0.25, newLength);
     }
 
     (window as any).__ENGINE_STATE__.arrangement = {
