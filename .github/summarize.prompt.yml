@@ -1,0 +1,36 @@
+name: summarize.prompt
+
+prompt: |
+  You are implementing the core engine layer of a music composition system called Harmony Engine.
+
+  This system is NOT a DAW, NOT a MIDI editor, and NOT a UI framework.
+  It is a deterministic musical state machine built around a canonical music model and a command-based mutation system.
+
+  CRITICAL ARCHITECTURAL RULES:
+  - UI-agnostic, audio-agnostic, MIDI-agnostic
+  - Fully deterministic state
+  - All mutations occur via Commands only
+  - State is derived from command history
+  - No tick-based timing (musical time only)
+  - Tracks are semantic views, NOT containers
+  - Notes are GLOBAL TRUTH OBJECTS
+
+  IMPLEMENTATION GOAL:
+  Build a TypeScript functional engine using reducers and immutable state.
+
+  REQUIRED FEATURES:
+  - SongState model with notes, tracks, timeline
+  - Command system (insert_note, delete_note, modify_note)
+  - Pure reducer function: reduce(state, command)
+  - Command history with undo/redo
+  - Deterministic replay from command log
+
+  FORBIDDEN:
+  - React, DOM, audio APIs, MIDI dependencies
+  - Mutable state patterns or class-based state mutation
+
+  SUCCESS CRITERIA:
+  - Engine runs standalone without UI
+  - State fully reproducible from command history
+  - Undo/redo works correctly
+  - No external runtime dependencies for core logic
