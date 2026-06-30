@@ -1,0 +1,27 @@
+name: Use GitHub Models
+
+on: [push]
+
+permissions:
+  models: read
+
+jobs:
+  call-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call AI model
+        env:
+          GITHUB_TOKEN: ${{ secrets.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}}
+        run: |
+          curl "https://models.github.ai/inference/chat/completions" \
+             -H "Content-Type: application/json" \
+             -H "Authorization: Bearer $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" \
+             -d '{
+              "messages": [
+                  {
+                     "role": "user",
+                     "content": "Explain the concept of recursion."
+                  }
+               ],
+               "model": "openai/gpt-4o"
+            }'
