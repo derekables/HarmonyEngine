@@ -5,6 +5,7 @@ import { useCommandDispatch } from "./engine/useCommandDispatch";
 import type { SongState } from "@harmony-engine/core";
 import { PlaybackEngine } from "./audio/PlaybackEngine";
 import { Transport } from "./audio/Transport";
+import ArrangementView from "./components/ArrangementView";
 
 /**
  * Temporary factory for initial song state.
@@ -31,9 +32,6 @@ export default function App() {
   const transport = useMemo(() => new Transport(120), []);
   const player = useMemo(() => new PlaybackEngine(transport), [transport]);
 
-  /**
-   * Click-to-insert note handler
-   */
   function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
 
@@ -49,17 +47,9 @@ export default function App() {
 
     const note = {
       id: `note-${Date.now()}`,
-      pitch: {
-        step,
-        octave,
-      },
-      onset: {
-        measure,
-        beat,
-      },
-      duration: {
-        beats: 1,
-      },
+      pitch: { step, octave },
+      onset: { measure, beat },
+      duration: { beats: 1 },
       velocity: 100,
     };
 
@@ -91,12 +81,12 @@ export default function App() {
       </header>
 
       <main style={{ display: "flex", height: "calc(100vh - 40px)" }}>
-        <div style={{ flex: 3 }}>
-          <PianoRollCanvas state={engine.state} />
+        <div style={{ flex: 2 }}>
+          <ArrangementView />
         </div>
 
-        <div style={{ flex: 1, padding: 10 }}>
-          <h3>Tab View (placeholder)</h3>
+        <div style={{ flex: 1 }}>
+          <PianoRollCanvas state={engine.state} />
         </div>
       </main>
 
