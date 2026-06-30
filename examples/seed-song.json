@@ -1,0 +1,28 @@
+{
+  "id": "seed-song-0001",
+  "metadata": {
+    "title": "Seed Song",
+    "description": "Canonical minimal Harmony Engine SongState used for testing and validation",
+    "createdAt": "2026-06-30T00:00:00Z"
+  },
+  "timeline": {
+    "tempoMap": [
+      {
+        "position": { "measure": 1, "beat": 1 },
+        "bpm": 120
+      }
+    ],
+    "timeSignatureMap": [
+      {
+        "position": { "measure": 1, "beat": 1 },
+        "numerator": 4,
+        "denominator": 4
+      }
+    ]
+  },
+  "tracks": {},
+  "notes": {},
+  "globalState": {
+    "version": 1
+  }
+}
